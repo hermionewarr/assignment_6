@@ -7,7 +7,7 @@
 // within class and put the function code itself immediately below class. 
 
 #include<iostream>
-//#include<stdlib> // for c style exit
+#include<stdlib> // for c style exit
 
 class matrix
 {
@@ -21,26 +21,22 @@ public:
 	// Default constructor
 	matrix() = default;
 	// Parameterized constructor
-	matrix(int number_of_rows, int number_of_columns) :rows{ number_of_rows }, columns{ number_of_columns }{};
-	// Copy constructor
-	matrix::matrix(matrix &new_matrix)
-	{
-		// Copy size and declare new array
-		matrix_data = 0; rows = new_matrix.get_rows(); columns = new_matrix.get_columns();
-		if (rows > 0 && columns >0)
-		{
-			matrix = new double[new_matrix.index(rows,columns)];
-			// Copy values into new array
-			for (int i = 0; i < new_matrix.index(rows, columns); i++) matrix[i] = new_matrix[i];
-		}
+	matrix(int number_of_rows, int number_of_columns) { 
+		rows = number_of_rows;
+		columns = number_of_columns;
+		matrix_data= new double[rows * columns];
 	}
+	// Copy constructor
+	
 	// Move constructor
 
 	// Destructor
-	~matrix() { std::cout << "destructor called" << std::endl; };
+	~matrix() { delete matrix_data; std::cout << "destructor called" << std::endl; };
+
 	// Access functions
 	int get_rows() const { return rows; } // Return number of rows
 	int get_columns() const { return columns; } // Return number of columns
+
 	// Return position in array of element (m,n)
 	int index(int m, int n) const 
 	{
@@ -48,6 +44,7 @@ public:
 		else { std::cout << "Error: out of range" << std::endl; exit(1); }
 	}
 	double& operator()(int m, int n) { return matrix_data[index(m, n)]; }
+
 	// Other access functions go here
 
 	// Other functions 
@@ -64,7 +61,11 @@ public:
 };
 
 // Member functions defined outside class
+//copy constructor
+matrix::matrix(int number_of_rows, int number_of_columns)
+{
 
+}
 
 
 // Overload insertion to output stream for matrices
