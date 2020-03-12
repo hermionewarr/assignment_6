@@ -13,7 +13,7 @@ class matrix
 {
 	// Friends
 	friend std::ostream& operator<<(std::ostream& os, const matrix& mat);
-	//friend std::istream& operator>>(std::istream& is, const matrix& mat);
+	friend std::istream& operator>>(std::istream& is, matrix& mat_input);
 private:
 	double *matrix_data{ nullptr };
 	size_t rows{ 0 };
@@ -45,7 +45,7 @@ public:
 	matrix operator-(matrix& matrix_to_minus);
 	matrix operator*(matrix& matrix_to_multiply);
 	// minor
-
+	matrix &minor(size_t row_to_delete, size_t column_to_delete);
 	// determinant
 
 };
@@ -140,17 +140,26 @@ double& matrix::operator[](size_t i) const
 std::ostream& operator<<(std::ostream& os, const matrix &mat)
 {
 	os << "[";
-	for (size_t i{1}; i <= mat.get_rows(); i++)
+	for (size_t i{1}; i <= mat.rows; i++)
 	{
-		for (size_t j{1}; j <= mat.get_columns(); j++)
+		for (size_t j{1}; j <= mat.columns; j++)
 		{
 			os << mat(i, j);
-			if (j != mat.get_columns()){os << "   ";}
+			if (j != mat.columns){os << "   ";}
 		}
-		if (i != mat.get_rows()) {os << std::endl;}
+		if (i != mat.rows) {os << std::endl;}
 	}
 	os << "]\n";
 	return os;
+}
+//overload istream
+std::istream& operator>>(std::istream& is, matrix& mat_input) {
+	//mat_input.rows = matrix_rows;
+	std::cout << "please enter you matrix data as elements seperated by space: " << std::endl;
+	for (size_t i{}; i < mat_input.rows * mat_input.columns; i++) {
+		is >> mat_input.matrix_data[i];
+	}
+	return is;
 }
 //addition
 matrix matrix::operator+(matrix& matrix_to_add) 
@@ -166,7 +175,6 @@ matrix matrix::operator+(matrix& matrix_to_add)
 	}
 	else {std::cout << "ya fucked it\n"; }
 }
-	
 //subbtration
 matrix matrix::operator-(matrix& matrix_to_minus) 
 {
@@ -182,8 +190,37 @@ matrix matrix::operator-(matrix& matrix_to_minus)
 	else { std::cout << "ya fucked it\n"; }
 }
 //multiplication
-matrix matrix::operator*(matrix& matrix_to_multiply) {
-	return matrix_to_multiply;
+matrix matrix::operator*(matrix& matrix_to_multiply) 
+{
+	if (columns == matrix_to_multiply.rows) 
+	{
+		matrix multiplied_matrix{ rows, matrix_to_multiply.columns };
+		for (size_t i{1}; i <= rows; i++) {
+			for (size_t j{1}; j <= columns; j++) {
+				for (size_t k{1}; k <= matrix_to_multiply.rows; k++) {
+					multiplied_matrix(i,j) += matrix_data[index(i,k)] * matrix_to_multiply(k,j);
+				}
+			}
+		}
+		return multiplied_matrix;
+	}
+	else { std::cout << "you cannot multiply these two matrices together" << std::endl; }
+}
+//minor
+matrix &matrix::minor(size_t row_to_delete, size_t column_to_delete) {
+	matrix minor(rows-1,columns-1);
+	int element{0};
+	//for (size_t element{}; element < (minor.rows * minor.columns); element++) {
+		for (size_t i{0}; i < rows; i++) {
+			for (size_t j{0}; j < columns; j++) {
+				if (i != row_to_delete || j != column_to_delete) {
+					minor.matrix_data[element] = matrix_data[i*columns + j];
+					element++;
+				}
+			}
+		}
+	//}
+	return minor;
 }
 // Main program
 int main()
@@ -191,11 +228,14 @@ int main()
 	// First part of assignment: constructing and deep copying matrices
 	// Demonstrate default constructor
 	matrix a1;
-	//std::cout << a1; //doesnt work
+	std::cout << a1; 
 	// Parameterized constructor
 	const int m{ 2 };
 	const int n{ 2 };
 	matrix a2{ m,n };
+	matrix a_in{ m,n };
+	std::cin >> a_in;
+	std::cout <<"a_in:\n" << a_in;
 	// Set values for a2 here
 	a2[0] = 1;
 	a2[1] = 3;
@@ -225,20 +265,21 @@ int main()
 	matrix a6;
 	a6 = std::move(a3);
 	std::cout << a6;
-
+	
 	// Second part of assignment: matrix operations
 	matrix b1{ 2,2 };
 	matrix b2{ 2,2 };
-	matrix b3{ 2,3 };
+	matrix b3{ 3,2 };
 	b1[0] = 5; b1[1] = 2; b1[2] = 3; b1[3] = 4;
 	b2[0] = 4; b2[1] = 2; b2[2] = 1; b2[3] = 3;
+	b3[0] = 5; b3[1] = 2; b3[2] = 3; b3[3] = 4; b3[4] = 2; b3[5] = 9;
 	// Addition of 2 matrices
 	std::cout << "adding b2 and b1 gives: \n" << b2+b1;
 	// Subtraction of 2 matrices
 	std::cout << "subtracting b2 and b1 gives: \n" << b2-b1;
 	// Multiplication of 2 matrices
-
-
+	std::cout << "the multpile of b3 and b1 is: \n" << b3 * b1;
+	std::cout << "the minor of b3 with row 2 and column 1 deleted is: " << b3.minor(1, 1);
 	// Determinant
 
 
