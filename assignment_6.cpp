@@ -47,7 +47,7 @@ public:
 	// minor
 	matrix &minor(size_t row_to_delete, size_t column_to_delete);
 	// determinant
-
+	double& determinant();
 };
 // Member functions defined outside class
 //paramerterised constructor
@@ -56,8 +56,7 @@ matrix::matrix(size_t number_of_rows, size_t number_of_columns)
 	rows = number_of_rows;
 	columns = number_of_columns;
 	matrix_data = new double[rows*columns];
-	for (size_t i{}; i < rows*columns; i++) 
-	{
+	for (size_t i{}; i < rows*columns; i++) {
 		matrix_data[i] = 0;
 	}
 }
@@ -74,12 +73,10 @@ matrix::matrix(matrix &copymatrix)
 	matrix_data = nullptr; 
 	rows = copymatrix.get_rows();
 	columns = copymatrix.get_columns();
-	if (rows*columns > 0) 
-	{
+	if (rows*columns > 0) {
 		matrix_data = new double[rows*columns];
 		//copy values into new array
-		for (size_t i{}; i < rows*columns; i++) 
-		{
+		for (size_t i{}; i < rows*columns; i++) {
 			matrix_data[i] = copymatrix[i];
 		}
 	}
@@ -106,12 +103,10 @@ matrix& matrix::operator=(matrix &copymatrix)
 	rows = 0; columns = 0;
 	//now copy size and declare new array
 	rows = copymatrix.get_rows(); columns = copymatrix.get_columns();
-	if (rows*columns > 0) 
-	{
+	if (rows*columns > 0) {
 		matrix_data = new double[rows*columns];
 		//copy values into new array
-		for (size_t i{}; i < rows*columns; i++)
-		{
+		for (size_t i{}; i < rows*columns; i++){
 			matrix_data[i] = copymatrix[i];
 		}
 	}
@@ -129,8 +124,7 @@ matrix& matrix::operator=(matrix&& movematrix)
 //overloaded element [] operator implementation
 double& matrix::operator[](size_t i) const 
 {
-	if (i < 0 || i >= rows*columns) 
-	{
+	if (i < 0 || i >= rows*columns) {
 		std::cout << "Error: trying to access array element out of bounds" << std::endl;
 		throw("Out of Bounds Error");
 	}
@@ -140,10 +134,8 @@ double& matrix::operator[](size_t i) const
 std::ostream& operator<<(std::ostream& os, const matrix &mat)
 {
 	os << "[";
-	for (size_t i{1}; i <= mat.rows; i++)
-	{
-		for (size_t j{1}; j <= mat.columns; j++)
-		{
+	for (size_t i{1}; i <= mat.rows; i++){
+		for (size_t j{1}; j <= mat.columns; j++){
 			os << mat(i, j);
 			if (j != mat.columns){os << "   ";}
 		}
@@ -187,7 +179,7 @@ matrix matrix::operator-(matrix& matrix_to_minus)
 		}
 		return minus_matrix;
 	}
-	else { std::cout << "ya fucked it\n"; }
+	else { std::cout << "ya fucked it\n"; return; }
 }
 //multiplication
 matrix matrix::operator*(matrix& matrix_to_multiply) 
@@ -207,20 +199,38 @@ matrix matrix::operator*(matrix& matrix_to_multiply)
 	else { std::cout << "you cannot multiply these two matrices together" << std::endl; }
 }
 //minor
-matrix &matrix::minor(size_t row_to_delete, size_t column_to_delete) {
+matrix &matrix::minor(size_t row_to_delete, size_t column_to_delete) 
+{
 	matrix minor(rows-1,columns-1);
 	int element{0};
 	//for (size_t element{}; element < (minor.rows * minor.columns); element++) {
-		for (size_t i{0}; i < rows; i++) {
-			for (size_t j{0}; j < columns; j++) {
+		for (size_t i{1}; i <= rows; i++) {
+			for (size_t j{1}; j <= columns; j++) {
 				if (i != row_to_delete || j != column_to_delete) {
-					minor.matrix_data[element] = matrix_data[i*columns + j];
+					minor.matrix_data[element] = matrix_data[index(i,j)];
 					element++;
 				}
 			}
 		}
 	//}
 	return minor;
+}
+// determinant
+double& matrix::determinant() {
+	if (rows == columns) {
+		std::cout << "Calculating the determinant..." << std::endl;
+		//cofactor
+		double det{};
+		if (rows * columns > 4) {
+			for (size_t j{1}; j < columns; j++) {
+				det += pow(-1,1+j)*matrix_data[index(1,j)]*minor(1,j).determinant();
+			}
+		}
+		//push this else into the reursive part
+		else if (rows * columns == 4) {
+			double det = this->matrix_data[index(1, 1)] * this->matrix_data[index(2, 2)] - this->matrix_data[index(2, 1)] * this->matrix_data[index(1, 2)];
+		}
+	}
 }
 // Main program
 int main()
