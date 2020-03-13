@@ -1,17 +1,11 @@
 // PHYS 30762 Programming in C++
 // Assignment 6
-
 // A matrix class - Hermione Warr
 
-// Note: for longer functions, you are advised to prototype them
-// within class and put the function code itself immediately below class. 
-
-#include<iostream>
-//#include<stdlib> // for c style exit
+#include<iostream> 
 
 class matrix
 {
-	// Friends
 	friend std::ostream& operator<<(std::ostream& os, const matrix& mat);
 	friend std::istream& operator>>(std::istream& is, matrix& mat_input);
 private:
@@ -19,14 +13,13 @@ private:
 	size_t rows{ 0 };
 	size_t columns{ 0 };
 public:
-	// Default constructor
+	// Default and Parameterised constructors
 	matrix() = default;
-	// Parameterized constructor
 	matrix(size_t number_of_rows, size_t number_of_columns);
 	// Copy constructor
 	matrix(matrix&);
 	// Move constructor
-	matrix(matrix&&);
+	matrix(matrix&&) noexcept;
 	// Destructor
 	~matrix() { delete matrix_data; std::cout << "destructor called" << std::endl; };
 	// Access functions
@@ -34,12 +27,15 @@ public:
 	size_t get_columns() const { return columns; } // Return number of columns
 	double& operator[](size_t i) const;
 	// Return position in array of element (m,n)
-	int index(size_t m, size_t n) const;
+	int index(size_t m, size_t n) const {
+		if (m > 0 && m <= rows && n > 0 && n <= columns) { return (n - 1) + (m - 1) * columns; }
+		else { std::cout << "Error: out of range" << std::endl; exit(1); }
+	}
 	double &operator()(size_t m,size_t n) const { return matrix_data[index(m, n)]; } 
 	// Deep Copy Assignment operators
 	matrix& operator=(matrix&);
 	// Move Assignment operator uses rvalues and lvalues
-	matrix& operator=(matrix&&);
+	matrix& operator=(matrix&&) noexcept;
 	// Addition, subtraction and multiplication
 	matrix operator+(matrix& matrix_to_add);
 	matrix operator-(matrix& matrix_to_minus);
@@ -49,7 +45,9 @@ public:
 	// determinant
 	double determinant();
 };
-// Member functions defined outside class
+/*-------------------------------------
+Member functions defined outside class
+--------------------------------------*/
 //paramerterised constructor
 matrix::matrix(size_t number_of_rows, size_t number_of_columns) 
 {
@@ -60,18 +58,19 @@ matrix::matrix(size_t number_of_rows, size_t number_of_columns)
 		matrix_data[i] = 0;
 	}
 }
-//retrun the index
-int matrix::index(size_t m, size_t n) const
+//overloaded element [] operator implementation
+double& matrix::operator[](size_t i) const
 {
-	if (m > 0 && m <= rows && n > 0 && n <= columns){return (n - 1) + (m - 1) * columns;}
-	else{std::cout << "Error: out of range" << std::endl; exit(1);}
+	if (i < 0 || i >= rows * columns) {
+		std::cout << "Error: trying to access array element out of bounds" << std::endl;
+		throw("Out of Bounds Error");
+	}
+	return matrix_data[i];
 }
-/* ------------------------
-copy constructor
-----------------------------*/
+//copy constructor
 matrix::matrix(matrix &copymatrix)
 {
-	std::cout << "copy constructor\n";
+	std::cout << "copy constructor called\n";
 	matrix_data = nullptr; 
 	rows = copymatrix.get_rows();
 	columns = copymatrix.get_columns();
@@ -84,9 +83,9 @@ matrix::matrix(matrix &copymatrix)
 	}
 }
 //move constructor
-matrix::matrix(matrix &&movematrix)
-{   //steal the data
-	std::cout << "move constructor" << std::endl;
+matrix::matrix(matrix &&movematrix) noexcept
+{  
+	std::cout << "move constructor called" << std::endl;
 	rows = movematrix.rows;
 	columns = movematrix.columns;
 	matrix_data = movematrix.matrix_data;
@@ -94,10 +93,10 @@ matrix::matrix(matrix &&movematrix)
 	movematrix.columns = 0;
 	movematrix.matrix_data = nullptr;
 }
-//assignment op for deep copying
-matrix& matrix::operator=(matrix &copymatrix) 
+//assignment operator for deep copying
+matrix& matrix::operator=(matrix &copymatrix)
 {
-	std::cout << "copy assignment \n";
+	std::cout << "copy assignment operator called \n";
 	if (&copymatrix == this) return *this;// so self assignment
 	//first delete this objects array
 	delete[] matrix_data; 
@@ -114,25 +113,16 @@ matrix& matrix::operator=(matrix &copymatrix)
 	}
 	return *this;
 }
-//assingment op for moving
-matrix& matrix::operator=(matrix&& movematrix) 
+//assingment operator for moving
+matrix& matrix::operator=(matrix&& movematrix) noexcept
 {
-	std::cout << "move aasingment" << std::endl;
+	std::cout << "move aasingment operator called" << std::endl;
 	std::swap(rows, movematrix.rows);
 	std::swap(columns, movematrix.columns);
 	std::swap(matrix_data, movematrix.matrix_data);
 	return *this;
 }
-//overloaded element [] operator implementation
-double& matrix::operator[](size_t i) const 
-{
-	if (i < 0 || i >= rows*columns) {
-		std::cout << "Error: trying to access array element out of bounds" << std::endl;
-		throw("Out of Bounds Error");
-	}
-	return matrix_data[i];
-}
-//addition
+//Addition
 matrix matrix::operator+(matrix& matrix_to_add) 
 {
 	if (rows == matrix_to_add.rows && columns == matrix_to_add.columns) 
@@ -146,7 +136,7 @@ matrix matrix::operator+(matrix& matrix_to_add)
 	}
 	else {std::cout << "ya fucked it\n"; exit(1);}
 }
-//subbtration
+//Subbtration
 matrix matrix::operator-(matrix& matrix_to_minus) 
 {
 	if (rows == matrix_to_minus.rows && columns == matrix_to_minus.columns)
@@ -160,7 +150,7 @@ matrix matrix::operator-(matrix& matrix_to_minus)
 	}
 	else { std::cout << "ya fucked it\n"; exit(1); }
 }
-//multiplication
+//Multiplication
 matrix matrix::operator*(matrix& matrix_to_multiply) 
 {
 	if (columns == matrix_to_multiply.rows) 
@@ -168,8 +158,8 @@ matrix matrix::operator*(matrix& matrix_to_multiply)
 		matrix multiplied_matrix{ rows, matrix_to_multiply.columns };
 		for (size_t i{1}; i <= rows; i++) {
 			for (size_t j{1}; j <= columns; j++) {
-				for (size_t k{1}; k <= matrix_to_multiply.rows; k++) {
-					multiplied_matrix(i,j) += matrix_data[index(i,k)] * matrix_to_multiply(k,j);
+				for (size_t k{1}; k <= matrix_to_multiply.rows; k++) {//matrix_data[index(i,k)]
+					multiplied_matrix(i,j) += (*this)(i,k) * matrix_to_multiply(k,j);
 				}
 			}
 		}
@@ -177,12 +167,11 @@ matrix matrix::operator*(matrix& matrix_to_multiply)
 	}
 	else { std::cout << "you cannot multiply these two matrices together" << std::endl; exit(1);}
 }
-//minor
+//Minor
 matrix matrix::minor(size_t row_to_delete, size_t column_to_delete) 
 {
 	matrix minor(rows-1,columns-1); 
-	//minor.rows = rows - 1; minor.columns = columns - 1;
-	if (row_to_delete <= rows && column_to_delete <= columns) {
+	if (row_to_delete <= rows && column_to_delete <= columns && rows >1 && columns >1) {
 		for (size_t i{ 1 }; i <= rows; i++) {
 			for (size_t j{ 1 }; j <= columns; j++) {
 				if (i < row_to_delete && j < column_to_delete) {
@@ -197,18 +186,16 @@ matrix matrix::minor(size_t row_to_delete, size_t column_to_delete)
 				else if (i > row_to_delete && j < column_to_delete) {
 					minor(i - 1, j) = (*this)(i, j);
 				}
-				
 			}
 		}
 	}
 	else { std::cout << "invalid row or column entered" << std::endl; exit(1); }
 	return minor;
 }
-// determinant
+//Determinant
 double matrix::determinant() {
 	if (rows == columns) {
 		std::cout << "Calculating the determinant..." << std::endl;
-		//cofactor
 		double det{};
 		if (rows * columns > 4) {
 			for (size_t j{1}; j <= columns; j++) {
@@ -216,17 +203,16 @@ double matrix::determinant() {
 			}
 			return det;
 		}
-		//push this else into the reursive part
 		else if (rows * columns == 4) {
 			double det = ((*this)(1,1) * (*this)(2, 2) - (*this)(2, 1) * (*this)(1, 2));
 			return det;
 		}
 	}
-	else { exit(1); }
+	else { std::cout << "cannot calculate determinant" << std::endl; exit(1); }
 }
-/*----------------------------------------------
-Overload operators for output and input stream
------------------------------------------------*/
+/*----------------------------------------------------
+Overload friend operators for output and input stream
+-----------------------------------------------------*/
 std::ostream& operator<<(std::ostream& os, const matrix& mat)
 {
 	os << "[";
@@ -240,7 +226,6 @@ std::ostream& operator<<(std::ostream& os, const matrix& mat)
 	os << "]\n";
 	return os;
 }
-//overload istream
 std::istream& operator>>(std::istream& is, matrix& mat_input) {
 	std::cout << "please enter you matrix data as elements seperated by space: " << std::endl;
 	for (size_t i{}; i < mat_input.rows * mat_input.columns; i++) {
@@ -248,61 +233,68 @@ std::istream& operator>>(std::istream& is, matrix& mat_input) {
 	}
 	return is;
 }
-
 /*------------
 Main program
 ------------*/
 int main()
 {
-	/*--------------------------------------------------------------
-	First part of assignment: constructing and deep copying matrices
-	---------------------------------------------------------------*/
-	//Demonstrating default constructor
+	/*----------------------------------------------------------------
+	First part of assignment: constructing, deep copying and matrices
+	-----------------------------------------------------------------*/
+	//Default constructor
 	matrix a1;
-	std::cout << a1; 
+	std::cout <<"Default constructor a1: \n" << a1;
 	//Parameterized constructor
 	const int m{ 2 };
 	const int n{ 2 };
 	matrix a2{ m,n };
-	matrix a_in{ m,n };
-	std::cin >> a_in;
-	std::cout <<"a_in:\n" << a_in;
 	//Set values print a2
 	a2[0] = 1; a2[1] = 3;
 	a2[2] = 2; a2[3] = 9;
 	std::cout << "a2:\n" << a2;;
-	//Deep copy by assignment: 
-	//define new matrix a3 then copy from a2 to a3 and self assign a3
+	//Deep copy by assignment: define new matrix a3 then copy from a2 to a3 and self assign a3
 	matrix a3{ m,n };
-	std::cout << "a3:\n" << a3;
+	std::cout << "empty a3:\n" << a3;
 	a3 = a2;
+	std::cout << "a2 copied by assignment to a3:\n" << a3;
 	a3 = a3;
-	std::cout << "a3:\n" << a3;
+	std::cout << "self assigning a3:\n" << a3;
 	//Modify contents of a2 matrix and show assigned matrix is unchanged here
 	a2[1] = 2;
 	std::cout << "modified a2:\n" << a2;
-	std::cout << "a3:\n" << a3;
+	std::cout << "unchanged a3:\n" << a3;
 	//Deep copy using copy constructor l
 	matrix a4{ a2 };
-	std::cout << "a4:\n" << a4;
+	std::cout << "deep copy of modified a2 to a4:\n" << a4;
 	// Modify contents of original matrix and show copied matrix is unchanged here
 	a2(1, 2) = 5;
 	std::cout << "a2 modified again:\n" << a2;
-	std::cout << "a4:\n" << a4;
-	//Move copy construction demonstration
+	std::cout << "unchanged a4:\n" << a4;
+	//Move construction demonstration
 	matrix a5(std::move(a2));
-	std::cout << a5;
+	std::cout <<"move a2 to a5: \n"  << a5;
 	// Move assignment demonstration
 	matrix a6;
 	a6 = std::move(a3);
-	std::cout << a6;
-	
-	/*------------------------------------------
-	Second part of assignment: matrix operations
-	-------------------------------------------*/
+	std::cout <<"move a3 to a6 by assignment \na6 = \n"<< a6;
+	//input a matrix
+	size_t input_matrix_rows{};
+	size_t input_matrix_columns{};
+	std::cout << "Please enter the rows for your matrix: " << std::endl;
+	std::cin >> input_matrix_rows;
+	std::cout << "Please enter the columns for your matrix: " << std::endl;
+	std::cin >> input_matrix_columns;
+	matrix a_in{ input_matrix_rows,input_matrix_columns };
+	std::cin >> a_in;
+	std::cout << "a_in:\n" << a_in;
+	/*-------------------------------------------------
+	Second part of assignment:matrix addition, 
+	subtraction, multiplication, minors and determinants
+	---------------------------------------------------*/
 	matrix b1{ 2,2 };
 	matrix b2{ 2,2 };
 	matrix b3{ 3,3 };
+	matrix b4{ 4,4 };
 	//b1
 	b1[0] = 5; b1[1] = 2; 
 	b1[2] = 3; b1[3] = 4;
@@ -313,16 +305,22 @@ int main()
 	b3[0] = 5; b3[1] = 2; b3[2] = 3; 
 	b3[3] = 4; b3[4] = 2; b3[5] = 9; 
 	b3[6] = 1; b3[7] = 8; b3[8] = 2;
+	//b4
+	b4[0] = 5; b4[1] = 2; b4[2] = 3; b4[3] = 4; 
+	b4[4] = 2; b4[5] = 9; b4[6] = 1; b4[7] = 8; 
+	b4[8] = 2; b4[9] = 1; b4[10] = 2; b4[11] = 1;
+	b4[12] = 2; b4[13] = 1; b4[14] = 2; b4[15] = 2;
 	// Addition of 2 matrices
-	std::cout << "Adding b2 and b1 gives: \n" << b2+b1;
+	std::cout << "b1 + b2 = \n" << b1+b2;
 	// Subtraction of 2 matrices
-	std::cout << "Subtracting b2 and b1 gives: \n" << b2-b1;
+	std::cout << "b2 - b1 = \n" << b2-b1;
 	// Multiplication of 2 matrices
-	std::cout << "The multpile of b2 and b1 is: \n" << b2 * b1;
-	std::cout << "The minor of b3 with row 2 and column 1 deleted is:\n" << b3.minor(2, 1);
+	std::cout << "b2 * b1 = \n" << b2 * b1;
+	// Minor
+	std::cout << "The minor of b3 with row 2 and column 1 deleted is:\n" << b3.minor(2, 1) << std::endl;
 	// Determinant
 	std::cout << "The determinant of a 3 by 3 matrix b3 is: \n" << b3.determinant() << std::endl;
 	std::cout << "The determinant of a 2 by 2 matrix b2 is:\n" << b2.determinant() << std::endl;
-
+	std::cout << "4 by 4 matrix determinant:\n" << b4.determinant() <<std::endl;
 	return 0;
 }
